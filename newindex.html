@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Student Profile</title>
+    <link rel="stylesheet" href="styles.css"> 
+    <style>
+        /* Add styles for the list management buttons and containers */
+        .list-container {
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px dotted #e0e0e0;
+        }
+        .list-item:last-child {
+            border-bottom: none;
+        }
+        .add-btn {
+            background-color: #28a745;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .remove-btn {
+            background-color: #dc3545;
+            color: white;
+            padding: 3px 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .form-group-inline {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        .form-group-inline .form-group {
+            flex: 1;
+        }
+        /* Style for disabled academic fields */
+        .form-group input:disabled, .form-group select:disabled {
+            background-color: #e9ecef !important;
+            cursor: not-allowed !important;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">VSSUT Student-Teacher Interactive Platform</div>
+        <nav class="top-nav">
+            <a href="dash.html">Home</a>
+            <a href="index.html">Logout</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <aside class="sidebar">
+            <nav class="side-nav">
+                <a href="dash.html" class="nav-item">Dashboard</a>
+                <a href="edit_profile.html" class="nav-item active">Edit Profile</a>
+                <a href="classes.html" class="nav-item">Classes</a>
+                <a href="notification.html" class="nav-item">Notifications</a>
+                <a href="doubts.html" class="nav-item">Doubts</a>
+                <a href="exam.html" class="nav-item">Exams</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <h2 class="page-title">Edit Profile</h2>
+            <p class="subtitle">Update your personal, academic, and experience information.</p>
+
+            <form id="editProfileForm" class="profile-form">
+                
+                <fieldset>
+                    <legend>Personal Information</legend>
+                    <div class="form-group">
+                        <label for="fullName">Full Name</label>
+                        <input type="text" id="fullName" name="fullName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email">
+                        <small class="hint">Email cannot be changed.</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Mobile Number</label>
+                        <input type="tel" id="phone" name="phone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="dob">Date of Birth</label>
+                        <input type="date" id="dob" name="dob" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="address">Address</label>
+                        <textarea id="address" name="address" rows="3"></textarea>
+                    </div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Educational Details</legend>
+                    <div class="form-group">
+                        <label for="institution">Institution Name</label>
+                        <input type="text" id="institution" name="institution" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="rollNumber">University Roll Number</label>
+                        <input type="text" id="rollNumber" name="rollNumber" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="degree">Degree/Program</label>
+                        <input type="text" id="degree" name="degree" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="branch">Branch/Specialization</label>
+                        <input type="text" id="branch" name="branch" required>
+                    </div>
+                    
+                    <!-- NEW FIELD: Passed Out Status -->
+                    <div class="form-group">
+                        <label for="passedOut">Passed Out / Graduated</label>
+                        <select id="passedOut" name="passedOut" required>
+                            <option value="no">No (Currently Enrolled)</option>
+                            <option value="yes">Yes (Graduated)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group-inline">
+                        <div class="form-group">
+                            <label for="year">Current Academic Year</label>
+                            <select id="year" name="year" required>
+                                <option value="">Select Year</option>
+                                <option value="1">1st Year</option>
+                                <option value="2">2nd Year</option>
+                                <option value="3">3rd Year</option>
+                                <option value="4">4th Year</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="semester">Current Semester</label>
+                            <select id="semester" name="semester" required>
+                                <option value="">Select Semester</option>
+                                <option value="1">Semester 1</option>
+                                <option value="2">Semester 2</option>
+                                <option value="3">Semester 3</option>
+                                <option value="4">Semester 4</option>
+                                <option value="5">Semester 5</option>
+                                <option value="6">Semester 6</option>
+                                <option value="7">Semester 7</option>
+                                <option value="8">Semester 8</option>
+                            </select>
+                        </div>
+                    </div>
+                </fieldset>
+                
+                <fieldset>
+                    <legend>Experience and Skills</legend>
+                    
+                    <div class="form-group">
+                        <label for="skills">Skills (e.g., Leadership, Communication, Teamwork)</label>
+                        <input type="text" id="skills" name="skills" placeholder="Separate skills with commas (e.g., Time Management, Agile)">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="techLanguages">Technical Languages (e.g., Python, Java, C++, SQL)</label>
+                        <input type="text" id="techLanguages" name="techLanguages" placeholder="Separate languages with commas (e.g., JavaScript, React, MySQL)">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="placementStatus">Placement Status</label>
+                        <select id="placementStatus" name="placementStatus" required>
+                            <option value="">Select Status</option>
+                            <option value="not_placed">Not Placed</option>
+                            <option value="placed_on_campus">Placed (On-Campus)</option>
+                            <option value="placed_off_campus">Placed (Off-Campus)</option>
+                        </select>
+                    </div>
+
+                    <!-- Dynamic Lists -->
+                    <div class="form-group">
+                        <label>Webinars/Courses Attended</label>
+                        <div id="webinarList" class="list-container">
+                            </div>
+                        <input type="text" id="webinarInput" placeholder="Webinar Name / Platform">
+                        <button type="button" class="add-btn" data-list-id="webinarList" data-input-id="webinarInput">Add Webinar</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Internships Done</label>
+                        <div id="internshipList" class="list-container">
+                        </div>
+                        <input type="text" id="internshipInput" placeholder="Company / Role">
+                        <button type="button" class="add-btn" data-list-id="internshipList" data-input-id="internshipInput">Add Internship</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Projects Completed</label>
+                        <div id="projectList" class="list-container">
+                        </div>
+                        <input type="text" id="projectInput" placeholder="Project Name / Brief Description">
+                        <button type="button" class="add-btn" data-list-id="projectList" data-input-id="projectInput">Add Project</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Hackathons Participated</label>
+                        <div id="hackathonList" class="list-container">
+                        </div>
+                        <input type="text" id="hackathonInput" placeholder="Hackathon Name / Achievement">
+                        <button type="button" class="add-btn" data-list-id="hackathonList" data-input-id="hackathonInput">Add Hackathon</button>
+                    </div>
+                </fieldset>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn primary">Save Changes</button>
+                    <button type="button" class="btn secondary">Cancel</button>
+                </div>
+            </form>
+        </main>
+    </div>
+
+    <!-- Combined JavaScript for logic and persistence -->
+    <script>
+        (function() {
+            function checkLogin() {
+                const user = localStorage.getItem('currentUsername');
+                if (!user) {
+                    // window.location.replace() removes the current page from history
+                    // so the user cannot click "Back" to return to it.
+                    window.location.replace('index.html');
+                }
+            }
+
+            // 1. Check immediately when the script runs
+            checkLogin();
+
+            // 2. Check again if the page is loaded from the browser's "Back" cache
+            window.addEventListener('pageshow', function(event) {
+                checkLogin();
+            });
+        })();
+        
+        // Configuration for dynamic list fields
+        const listConfig = [
+            { id: 'webinarList', inputId: 'webinarInput', storageKey: 'webinars' },
+            { id: 'internshipList', inputId: 'internshipInput', storageKey: 'internships' },
+            { id: 'projectList', inputId: 'projectInput', storageKey: 'projects' },
+            { id: 'hackathonList', inputId: 'hackathonInput', storageKey: 'hackathons' }
+        ];
+
+        // --- Dynamic List Management Functions ---
+        function createListItem(text, listId) {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'list-item';
+            itemDiv.innerHTML = `
+                <span>${text}</span>
+                <button type="button" class="remove-btn">Remove</button>
+            `;
+            itemDiv.querySelector('.remove-btn').addEventListener('click', function() {
+                itemDiv.remove();
+            });
+            document.getElementById(listId).appendChild(itemDiv);
+        }
+
+        function initializeAddButtons() {
+            document.querySelectorAll('.add-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const listId = this.getAttribute('data-list-id');
+                    const inputId = this.getAttribute('data-input-id');
+                    const inputElement = document.getElementById(inputId);
+                    const value = inputElement.value.trim();
+
+                    if (value) {
+                        createListItem(value, listId);
+                        inputElement.value = ''; // Clear input
+                    } else {
+                        alert('Please enter a value before adding.');
+                    }
+                });
+            });
+        }
+
+        function setSelectByText(selectId, textValue) {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+            for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].text === textValue) {
+                    select.value = select.options[i].value;
+                    return;
+                }
+            }
+            select.value = textValue;
+        }
+        
+        // --- Toggle Logic ---
+        function toggleAcademicFields(isPassedOut) {
+            const yearSelect = document.getElementById('year');
+            const semesterSelect = document.getElementById('semester');
+            
+            if (isPassedOut) {
+                yearSelect.setAttribute('disabled', 'disabled');
+                semesterSelect.setAttribute('disabled', 'disabled');
+                yearSelect.value = ''; 
+                semesterSelect.value = '';
+            } else {
+                yearSelect.removeAttribute('disabled');
+                semesterSelect.removeAttribute('disabled');
+            }
+        }
+
+        // --- Load Data Function ---
+        function loadProfileData(username) {
+            // Fetch profile data from the server
+            fetch(`http://127.0.0.1:5000/api/profile/${username}`)
+                .then(response => {
+                    if (response.status === 404) {
+                        console.log('No profile found, loading empty form.');
+                        return {}; // No profile yet, just empty form
+                    }
+                    if (!response.ok) {
+                        throw new Error('Could not fetch profile');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Personal Info
+                    document.getElementById('fullName').value = data.fullName || '';
+                    document.getElementById('email').value = data.email || '';
+                    document.getElementById('phone').value = data.phone || '';
+                    document.getElementById('address').value = data.address || '';
+                    document.getElementById('dob').value = data.dob || '';
+
+                    // Educational Details
+                    document.getElementById('institution').value = data.institution || '';
+                    document.getElementById('rollNumber').value = data.rollNumber || '';
+                    document.getElementById('degree').value = data.degree || '';
+                    document.getElementById('branch').value = data.branch || '';
+
+                    // Load Passed Out status
+                    const passedOutSelect = document.getElementById('passedOut');
+                    passedOutSelect.value = data.passedOut || 'no'; 
+                    toggleAcademicFields(passedOutSelect.value === 'yes');
+
+                    if (passedOutSelect.value === 'no' || data.year) {
+                        setSelectByText('year', data.year);
+                        setSelectByText('semester', data.semester);
+                    }
+                    
+                    // Experience and Skills
+                    document.getElementById('skills').value = data.skills || '';
+                    document.getElementById('techLanguages').value = data.techLanguages || '';
+                    document.getElementById('placementStatus').value = data.placementStatus || '';
+
+                    // Dynamic Lists
+                    listConfig.forEach(config => {
+                        document.getElementById(config.id).innerHTML = ''; // Clear before loading
+                        if (data[config.storageKey] && Array.isArray(data[config.storageKey])) {
+                            data[config.storageKey].forEach(item => {
+                                createListItem(item, config.id);
+                            });
+                        }
+                    });
+                })
+                .catch(err => console.error('Failed to load profile:', err));
+        }
+
+        // --- Event Listeners and Initialization ---
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get the logged-in user's username
+            const username = localStorage.getItem('currentUsername');
+            if (!username) {
+                alert('You are not logged in! Redirecting to login.');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Load existing profile data into the form
+            loadProfileData(username);
+            
+            // Activate the "Add" buttons for dynamic lists
+            initializeAddButtons();
+            
+            // Attach listener for the "Passed Out" dropdown
+            const passedOutSelect = document.getElementById('passedOut');
+            if (passedOutSelect) {
+                passedOutSelect.addEventListener('change', function() {
+                    toggleAcademicFields(this.value === 'yes');
+                });
+            }
+            
+            // --- Form Submission Handler (This part is now complete) ---
+            document.getElementById('editProfileForm').addEventListener('submit', function(event) {
+                event.preventDefault(); 
+                
+                const fullName = document.getElementById('fullName').value.trim();
+                const phone = document.getElementById('phone').value.trim();
+                
+                if (fullName === "" || phone.length < 10) {
+                    alert('Please enter a valid Full Name and Phone Number.');
+                    return;
+                }
+
+                // --- 1. Collect data from dynamic lists ---
+                const collectedListData = {};
+                listConfig.forEach(config => {
+                    collectedListData[config.storageKey] = Array.from(
+                        document.getElementById(config.id).querySelectorAll('.list-item span')
+                    ).map(span => span.textContent);
+                });
+
+                // --- 2. Get year/semester text ---
+                const isPassedOut = document.getElementById('passedOut').value === 'yes';
+                const yearSelect = document.getElementById('year');
+                const semesterSelect = document.getElementById('semester');
+                const currentYear = isPassedOut ? '' : (yearSelect.options[yearSelect.selectedIndex]?.text || '');
+                const currentSemester = isPassedOut ? '' : (semesterSelect.options[semesterSelect.selectedIndex]?.text || '');
+
+                // --- 3. Build the complete profileData object ---
+                const profileData = {
+                    username: username, // Make sure username is included
+                    
+                    // Personal Info
+                    fullName: fullName,
+                    email: document.getElementById('email').value.trim(),
+                    phone: phone,
+                    address: document.getElementById('address').value.trim(),
+                    dob: document.getElementById('dob').value, 
+                    
+                    // Educational Details
+                    institution: document.getElementById('institution').value.trim(),
+                    rollNumber: document.getElementById('rollNumber').value.trim(),
+                    degree: document.getElementById('degree').value.trim(),
+                    branch: document.getElementById('branch').value.trim(),
+                    passedOut: isPassedOut ? 'yes' : 'no', 
+                    year: currentYear,
+                    semester: currentSemester,
+                    
+                    // Experience and Skills 
+                    skills: document.getElementById('skills').value.trim(),
+                    techLanguages: document.getElementById('techLanguages').value.trim(),
+                    placementStatus: document.getElementById('placementStatus').value,
+                    
+                    // Dynamic Lists
+                    ...collectedListData
+                };
+
+                // --- 4. Send the complete data to the backend ---
+                fetch(`http://127.0.0.1:5000/api/profile/${username}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(profileData)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Server failed to save data.');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert('Profile updated and saved successfully! Redirecting to Dashboard...');
+                    window.location.href = 'dash.html'; 
+                })
+                .catch(err => {
+                    console.error('Error saving profile:', err);
+                    alert('An error occurred while saving. Please try again.');
+                });
+            });
+            
+            // Cancel button redirect
+            document.querySelector('.btn.secondary').addEventListener('click', function() {
+                if (confirm('Are you sure you want to discard changes?')) {
+                    window.location.href = 'dash.html'; // Go back to dashboard
+                }
+            });
+        });
+    </script>
+</body>
+</html>

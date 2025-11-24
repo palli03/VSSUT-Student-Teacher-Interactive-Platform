@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the background gradient (matching the main page) */
+        .gradient-background {
+            /* Using deep purple and magenta/violet for the gradient */
+            background: linear-gradient(135deg, #4c1d95, #6d28d9, #9333ea); 
+        }
+        /* Custom font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Ensure the body takes up the full viewport height and center content */
+            min-height: 100vh; 
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="gradient-background text-white antialiased flex items-center justify-center">
+
+    <div class="w-full max-w-sm p-8 bg-blue-900/60 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/10">
+        <h1 class="text-3xl font-bold text-center mb-10">Sign Up</h1>
+        
+        <form id="signup-form" class="space-y-6">
+            
+            <div>
+                <label for="userType" class="block text-sm font-medium mb-2">User Type</label>
+                <select 
+                    id="userType" 
+                    name="userType"
+                    class="w-full p-3 rounded-xl bg-indigo-300/30 border border-transparent focus:border-indigo-400 focus:outline-none transition duration-200 text-white appearance-none"
+                    required
+                >
+                    <option value="" disabled selected class="text-gray-400 bg-blue-900">Select User Role</option>
+                    <option value="admin" class="bg-blue-900">Admin</option>
+                    <option value="teacher" class="bg-blue-900">Teacher</option>
+                    <option value="student" class="bg-blue-900">Student</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="username" class="block text-sm font-medium mb-2">Username (10 digits) or Email</label>
+                <input 
+                    type="text" 
+                    id="username" 
+                    name="username" 
+                    placeholder="Enter email address" 
+                    class="w-full p-3 rounded-xl bg-indigo-300/30 border border-transparent focus:border-indigo-400 focus:outline-none placeholder-gray-300 transition duration-200 text-white"
+                    required
+                >
+            </div>
+            
+            <div id="validation-message" class="text-sm text-red-400 h-6"></div>
+
+            <div class="-mt-4">
+                <label for="password" class="block text-sm font-medium mb-2">Password (Exactly 6 characters)</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    placeholder="Enter exactly 6 characters" 
+                    class="w-full p-3 rounded-xl bg-indigo-300/30 border border-transparent focus:border-indigo-400 focus:outline-none placeholder-gray-300 transition duration-200 text-white"
+                    required
+                    pattern=".{6}"
+                    title="Password must be exactly 6 characters long."
+                >
+            </div>
+
+            <button 
+                type="submit" 
+                class="w-full py-3 mt-6 rounded-xl bg-green-500 text-lg font-semibold text-white shadow-xl hover:bg-green-600 transition-transform duration-300 transform hover:scale-[1.02]"
+            >
+                Sign Up
+            </button>
+        </form>
+        
+        <div class="mt-6 text-center text-sm space-y-2">
+            <p>
+                Already have an account? 
+                <a href="index.html" class="text-green-300 hover:text-green-400 font-medium transition-colors">
+                    Login
+                </a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('signup-form').addEventListener('submit', function(event) {
+            event.preventDefault(); 
+            
+            const userType = document.getElementById('userType').value;
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            const validationMessage = document.getElementById('validation-message');
+            
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+
+            validationMessage.textContent = '';
+            validationMessage.classList.remove('text-green-400', 'text-red-400');
+
+            // Basic client-side validation (Server will re-validate)
+            if (!userType || !username || !password) {
+                validationMessage.textContent = 'Please fill out all fields.';
+                validationMessage.classList.add('text-red-400');
+                return;
+            }
+
+            // Prepare data to send to the backend
+            const formData = {
+                userType: userType,
+                username: username,
+                password: password
+            };
+
+            // --- Backend Communication (Replacing localStorage) ---
+            fetch('http://127.0.0.1:5000/api/signup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => {
+                // Check for a successful response (201 Created)
+                if (response.status === 201) {
+                    return response.json();
+                } else {
+                    // Handle all error responses (400, 409, 500, etc.)
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.message || `Sign up failed with status ${response.status}`);
+                    });
+                }
+            })
+            .then(data => {
+                // Success response
+                validationMessage.textContent = data.message || 'Sign up successful! Redirecting to login...';
+                validationMessage.classList.add('text-green-400');
+
+                // Redirect to Login Page
+                setTimeout(() => {
+                    window.location.href = 'login.html'; // Changed from 'index.html' to 'login.html' for clarity
+                }, 1000);
+            })
+            .catch(error => {
+                // Handle network errors or errors thrown from the response check
+                console.error('Error during sign up:', error);
+                validationMessage.textContent = error.message || 'An unexpected error occurred. Please try again.';
+                validationMessage.classList.add('text-red-400');
+            });
+        });
+    </script>
+
+</body>
+</html>

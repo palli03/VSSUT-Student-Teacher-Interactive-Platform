@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Attendance Sheet</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --background-light: #f8f9fa;
+            --text-dark: #343a40;
+            --border-color: #dee2e6;
+        }
+        body { font-family: 'Inter', sans-serif; line-height: 1.6; background-color: var(--background-light); color: var(--text-dark); }
+        .header { background-color: var(--primary-color); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+        .logo { font-size: 1.5rem; font-weight: bold; }
+        .top-nav a { color: white; text-decoration: none; margin-left: 20px; padding: 5px 10px; border-radius: 4px; }
+        .top-nav a:hover { background-color: rgba(255, 255, 255, 0.2); }
+        .container { display: flex; min-height: calc(100vh - 60px); }
+        .sidebar { width: 250px; background-color: #ffffff; border-right: 1px solid var(--border-color); padding: 20px 0; box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05); }
+        .nav-item { display: block; padding: 12px 30px; color: var(--text-dark); text-decoration: none; font-size: 1rem; transition: background-color 0.2s; border-left: 3px solid transparent; }
+        .nav-item.active { background-color: var(--primary-color); color: white; font-weight: bold; border-left: 3px solid #ffc107; }
+        .nav-item:hover { background-color: var(--background-light); }
+        .main-content { flex-grow: 1; padding: 30px; }
+        .page-title { font-size: 2rem; color: var(--primary-color); margin-bottom: 5px; }
+        .subtitle { color: var(--secondary-color); margin-bottom: 25px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; }
+        .profile-card { background-color: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.05); }
+        
+        /* Button Styles */
+        .btn { padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95rem; font-weight: 500; transition: background-color 0.2s; white-space: nowrap; }
+        .btn.primary { background-color: var(--primary-color); color: white; }
+        .btn.secondary { background-color: var(--secondary-color); color: white; }
+        .btn:disabled { background-color: #cccccc; cursor: not-allowed; }
+
+        .attendance-container { overflow-x: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.05); }
+        .attendance-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; min-width: 700px; }
+        .attendance-table th, .attendance-table td { border: 1px solid #dee2e6; padding: 12px 10px; text-align: left; }
+        .attendance-table th { background-color: var(--primary-color); color: white; font-weight: bold; position: sticky; top: 0; z-index: 10; }
+        .status-P { color: white; background-color: #28a745; padding: 2px 4px; border-radius: 2px; }
+        .status-A { color: white; background-color: #dc3545; padding: 2px 4px; border-radius: 2px; }
+        
+        .add-student-group { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; align-items: center; }
+        .add-student-group input { padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; }
+        /* Read-only date input style */
+        .add-student-group input[readonly] { background-color: #e9ecef; cursor: not-allowed; color: #495057; }
+
+        .remove-btn { background-color: #dc3545; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
+        
+        /* Modal Styles */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); display: none; justify-content: center; align-items: center; z-index: 100; }
+        .modal-content { background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; color: #343a40; }
+        .modal-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .modal-item:last-of-type { border-bottom: none; }
+        .modal-item .student-info { font-weight: 500; }
+        .modal-buttons button { padding: 8px 15px; border: 1px solid transparent; border-radius: 4px; cursor: pointer; margin-left: 5px; }
+        .modal-buttons .present-btn { background-color: #d4edda; color: #155724; }
+        .modal-buttons .absent-btn { background-color: #f8d7da; color: #721c24; }
+        .modal-buttons .selected { border-color: #007bff; box-shadow: 0 0 5px #007bff; }
+        
+        .hidden { display: none; }
+        .student-profile-link { color: var(--primary-color); font-weight: 500; text-decoration: none; }
+        .student-profile-link:hover { text-decoration: underline; color: #0056b3; }
+
+        /* --- Color classes for rows (Deep Colors) --- */
+        .bg-danger-light { background-color: #ff9999 !important; } 
+        .bg-warning-light { background-color: #ffe066 !important; } 
+        .bg-success-light { background-color: #99e699 !important; } 
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">VSSUT Student-Teacher Interactive Platform</div>
+        <nav class="top-nav">
+            <a href="dash.html">Home</a>
+            <a href="#" id="logoutLink">Logout</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <aside class="sidebar">
+            <nav class="side-nav">
+                <a href="dash.html" class="nav-item">Dashboard</a>
+                <a href="newindex.html" class="nav-item">Edit Profile</a>
+                <a href="classes.html" class="nav-item active">Classes</a>
+                <a href="notification.html" class="nav-item">Notifications</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <h2 class="page-title" id="course-name-display"></h2>
+            <p class="subtitle" id="course-code-display"></p>
+
+            <div id="teacher-controls" class="profile-card hidden" style="margin-bottom: 20px;">
+                <h3>Manage Class</h3>
+                <div class="add-student-group">
+                    <input type="text" id="newStudentRollNo" placeholder="Roll Number (10)" maxlength="10" pattern="\d{10}" style="width: 140px;">
+                    <input type="text" id="newStudentName" placeholder="Student Name" style="width: 160px;">
+                    <button type="button" class="btn primary" id="addStudentBtn">Add Student</button>
+                    
+                    <input type="date" id="newLectureDateInput" readonly title="Only the current date is allowed" style="cursor: not-allowed;"> 
+                    <button type="button" class="btn secondary" id="addLectureBtn">Add Lecture (Today)</button>
+                    
+                    <button type="button" class="btn primary" id="markAttendanceBtn" style="background-color: #007bff;">Mark Attendance</button>
+                    <button type="button" class="btn primary" id="exportMonthlyPdfBtn" style="background-color: #ffc107; color: #343a40;">Export Monthly</button>
+                    <button type="button" class="btn primary" id="exportPdfBtn" style="background-color: #dc3545;">Export All</button>
+                </div>
+                <div id="add-student-error" class="text-red-500 text-sm mt-2" style="color: #dc3545;"></div>
+            </div>
+
+            <div class="attendance-container">
+                <table class="attendance-table">
+                    <thead>
+                        <tr id="attendance-table-header-row">
+                            <th style="width: 5%;">#</th>
+                            <th style="width: 15%;">Roll No.</th> 
+                            <th style="width: 25%;" id="name-header">Student Name</th>
+                            <th style="width: 10%;">Percentage</th>
+                            <th style="width: 10%; text-align: center;">Marks</th> 
+                            <th style="width: 5%;" id="delete-header" class="hidden">Delete</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendance-body">
+                        </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <div id="attendanceModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-xl font-bold mb-4">Mark Attendance for <span id="currentLectureDate"></span></h3>
+            <div id="modal-student-list"></div>
+            <div class="mt-6 flex justify-end gap-3">
+                <button class="btn secondary" id="closeModalBtn">Cancel</button>
+                <button class="btn primary" id="saveAttendanceModalBtn">Save Attendance</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            function checkLogin() {
+                const user = localStorage.getItem('currentUsername');
+                if (!user) {
+                    // window.location.replace() removes the current page from history
+                    // so the user cannot click "Back" to return to it.
+                    window.location.replace('index.html');
+                }
+            }
+
+            // 1. Check immediately when the script runs
+            checkLogin();
+
+            // 2. Check again if the page is loaded from the browser's "Back" cache
+            window.addEventListener('pageshow', function(event) {
+                checkLogin();
+            });
+        })();
+        
+        // --- Route Guard ---
+        (function() {
+            const loggedInUser = localStorage.getItem('currentUsername');
+            if (!loggedInUser) {
+                alert('You are not logged in. Redirecting...');
+                window.location.href = 'index.html';
+                throw new Error("User not logged in."); 
+            }
+        })();
+
+        // --- Core Configuration ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const courseCode = urlParams.get('course');
+        const USER_ROLE_KEY = 'currentUserRole';
+        const CURRENT_USERNAME_KEY = 'currentUsername'; 
+        const currentUserRole = localStorage.getItem(USER_ROLE_KEY) || 'student';
+        const currentStudentUsername = localStorage.getItem(CURRENT_USERNAME_KEY); 
+        let currentStudentRoll = null; 
+
+        const courseNames = {
+            "CS401": "Advanced Data Structures",
+            "CS305": "Artificial Intelligence",
+            "CS104": "Data Analytics"
+        };
+        const courseName = courseNames[courseCode] || `Course ${courseCode}`;
+
+        let students = [];
+        let lectureDates = [];
+        let modalAttendanceState = {}; 
+
+        // --- Utility Functions ---
+        function handleLogout(event) {
+            event.preventDefault();
+            localStorage.removeItem(USER_ROLE_KEY);
+            localStorage.removeItem(CURRENT_USERNAME_KEY); 
+            window.location.href = 'index.html'; 
+        }
+        function generateUniqueId() { return 's' + Math.random().toString(36).substring(2, 9); }
+        
+        function calculatePercentage(record) { 
+            if (!record || record.length === 0) return 0; 
+            const presentCount = record.filter(status => status == 1).length; 
+            return Math.round((presentCount / record.length) * 100); 
+        }
+
+        function calculateMarks(percentage) {
+            if (percentage < 75) return 0;
+            if (percentage <= 80) return 1;
+            if (percentage <= 85) return 2;
+            if (percentage <= 90) return 3;
+            if (percentage <= 95) return 4;
+            return 5; 
+        }
+
+        async function saveAttendanceData() {
+            if (currentUserRole === 'teacher') {
+                const dataToSave = { students, lectureDates };
+                try {
+                    const response = await fetch(`http://127.0.0.1:5000/api/attendance/${courseCode}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(dataToSave)
+                    });
+                    if (!response.ok) throw new Error('Failed to save attendance');
+                    console.log('Attendance saved to server.');
+                    return true;
+                } catch (err) {
+                    console.error('Save attendance error:', err);
+                    alert(`Error: Could not save attendance.\n${err.message}`);
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        async function getStudentRollNumber(username) {
+            if (!username) return null;
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/api/profile/${username}`);
+                if (response.ok) {
+                    const profileData = await response.json();
+                    return profileData.rollNumber || null;
+                }
+            } catch (error) { console.error('Error fetching profile:', error); }
+            return null;
+        }
+
+        // --- Rendering Functions ---
+        function renderStatus(status) { 
+            return (status == 1) ? '<span class="status-P">P</span>' : '<span class="status-A">A</span>'; 
+        }
+
+        function renderStudentRow(student, index) {
+            const row = document.createElement('tr');
+            row.dataset.studentId = student.id;
+            
+            const percentage = calculatePercentage(student.attendance);
+            const marks = calculateMarks(percentage);
+            
+            row.className = ''; 
+            if (percentage < 60) {
+                row.classList.add('bg-danger-light'); 
+            } else if (percentage >= 60 && percentage <= 75) {
+                row.classList.add('bg-warning-light'); 
+            } else {
+                row.classList.add('bg-success-light'); 
+            }
+            
+            let rowContent = '';
+            if (currentUserRole === 'student') {
+                if (student.rollNumber !== currentStudentRoll) return null;
+                rowContent = `<td>${index + 1}</td>
+                              <td>${student.rollNumber}</td>
+                              <td>${student.name}</td>
+                              <td class="percentage">${percentage}%</td>
+                              <td style="text-align: center; font-weight: bold;">${marks}</td>`;
+            } else { 
+                const studentNameCell = `<td><a href="dash.html?roll=${student.rollNumber}" target="_blank" class="student-profile-link" title="View profile for ${student.name}">${student.name}</a></td>`;
+                rowContent = `<td>${index + 1}</td>
+                              <td>${student.rollNumber}</td>
+                              ${studentNameCell}
+                              <td class="percentage">${percentage}%</td>
+                              <td style="text-align: center; font-weight: bold;">${marks}</td>
+                              <td><button class="delete-student-btn remove-btn" data-student-id="${student.id}">Delete</button></td>`;
+            }
+            
+            let statusCells = '';
+            lectureDates.forEach((_, dateIndex) => {
+                 const status = (student.attendance && student.attendance[dateIndex] !== undefined) ? student.attendance[dateIndex] : 0;
+                 statusCells += `<td style="text-align: center; width: 60px;">${renderStatus(status)}</td>`;
+            });
+
+            row.innerHTML = rowContent + statusCells;
+            return row;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('attendance-body');
+            tbody.innerHTML = '';
+            const theadRow = document.getElementById('attendance-table-header-row');
+            
+            while (theadRow.children.length > 6) theadRow.removeChild(theadRow.lastChild);
+
+            if (currentUserRole === 'student') {
+                document.getElementById('teacher-controls').classList.add('hidden');
+                document.getElementById('delete-header').classList.add('hidden');
+                document.getElementById('name-header').style.width = '40%'; 
+            } else { 
+                document.getElementById('teacher-controls').classList.remove('hidden');
+                document.getElementById('delete-header').classList.remove('hidden');
+                document.getElementById('name-header').style.width = '25%'; 
+            }
+            
+            lectureDates.forEach(date => {
+                const th = document.createElement('th');
+                th.textContent = date;
+                th.style.width = '60px'; th.style.minWidth = '60px'; th.style.textAlign = 'center'; 
+                theadRow.appendChild(th);
+            });
+
+            let studentRowCounter = 0;
+            students.forEach((student, index) => {
+                const row = renderStudentRow(student, index);
+                if (row) { tbody.appendChild(row); studentRowCounter++; }
+            });
+            
+            if (studentRowCounter === 0) {
+                const msg = currentUserRole === 'student' ? 'Your attendance record is not found.' : 'No students in the class list.';
+                tbody.innerHTML = `<tr><td colspan="${theadRow.children.length}" style="text-align: center; color: #6c757d; padding: 20px;">${msg}</td></tr>`;
+            }
+            if (currentUserRole !== 'student') attachDeleteListeners();
+        }
+
+        // --- Modal Functions ---
+        function openAttendanceModal() { 
+            if (lectureDates.length === 0) { alert('Please add a lecture date first.'); return; } 
+            const latestLectureIndex = 0; 
+            document.getElementById('currentLectureDate').textContent = lectureDates[latestLectureIndex]; 
+            
+            const studentListDiv = document.getElementById('modal-student-list'); 
+            studentListDiv.innerHTML = ''; 
+            modalAttendanceState = {}; 
+            
+            students.forEach(student => { 
+                const initialStatus = (student.attendance && student.attendance[latestLectureIndex] == 1) ? 1 : 0;
+                modalAttendanceState[student.id] = initialStatus; 
+                
+                const itemDiv = document.createElement('div'); 
+                itemDiv.className = 'modal-item'; 
+                itemDiv.innerHTML = `
+                    <span class="student-info">${student.rollNumber} - ${student.name}</span>
+                    <span class="modal-buttons" data-student-id="${student.id}">
+                        <button class="present-btn ${initialStatus === 1 ? 'selected' : ''}" data-status="1">P</button>
+                        <button class="absent-btn ${initialStatus === 0 ? 'selected' : ''}" data-status="0">A</button>
+                    </span>`; 
+                studentListDiv.appendChild(itemDiv); 
+            }); 
+            attachModalListeners(); 
+            document.getElementById('attendanceModal').style.display = 'flex'; 
+        }
+
+        function attachModalListeners() { 
+            document.querySelectorAll('#modal-student-list .modal-buttons button').forEach(button => { 
+                button.addEventListener('click', function() { 
+                    const parent = this.closest('.modal-buttons'); 
+                    parent.querySelectorAll('button').forEach(btn => btn.classList.remove('selected')); 
+                    this.classList.add('selected'); 
+                    modalAttendanceState[parent.dataset.studentId] = parseInt(this.dataset.status); 
+                }); 
+            }); 
+        }
+        
+        async function saveModalAttendance() {
+            const latestLectureIndex = 0; 
+            students.forEach(student => {
+                if (!student.attendance) student.attendance = [];
+                const newStatus = modalAttendanceState[student.id];
+                if (typeof newStatus !== 'undefined') {
+                    student.attendance[latestLectureIndex] = newStatus;
+                }
+            });
+            const success = await saveAttendanceData(); 
+            if (success) {
+                renderTable(); 
+                document.getElementById('attendanceModal').style.display = 'none';
+            }
+        }
+
+        // --- PDF Export Functions ---
+        function processExportData(studentList, datesList, indices) { 
+            const sortedIndices = indices.sort((a, b) => datesList.indexOf(datesList[a]) - datesList.indexOf(datesList[b])); 
+            const filteredDates = sortedIndices.map(i => datesList[i]); 
+            const tableHeaders = ['Roll No.', 'Student Name', 'Attendance %', 'Marks', ...filteredDates]; 
+            const tableData = studentList.map((student) => { 
+                const filteredAttendance = sortedIndices.map(i => student.attendance[i]); 
+                const percentage = calculatePercentage(filteredAttendance); 
+                const marks = calculateMarks(percentage);
+                const attendanceStatuses = filteredAttendance.map(status => status == 1 ? 'P' : 'A'); 
+                return [ student.rollNumber, student.name, `${percentage}%`, marks, ...attendanceStatuses ]; 
+            }); 
+            return { tableHeaders, tableData }; 
+        }
+
+        async function exportMonthlyPdf() { 
+            try {
+                if (!window.jspdf) throw new Error("jsPDF library not loaded.");
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('l');
+                if (typeof doc.autoTable !== 'function') throw new Error("jsPDF AutoTable plugin not loaded.");
+
+                if (lectureDates.length === 0) { alert('No lecture dates available to export.'); return; } 
+
+                const today = new Date(); 
+                const defaultMonthYear = `${today.getMonth() + 1}/${today.getFullYear()}`; 
+                const dateInput = prompt(`Enter Month/Year (e.g., 11/${today.getFullYear()}):`, defaultMonthYear); 
+                if (!dateInput) return; 
+
+                const parts = dateInput.split('/'); 
+                if (parts.length !== 2) { alert('Invalid date format. Use MM/YYYY.'); return; } 
+
+                const targetMonth = parseInt(parts[0].trim(), 10);
+                const targetYearStr = parts[1].trim();
+
+                if (isNaN(targetMonth)) { alert("Invalid month."); return; }
+
+                const monthlyIndices = []; 
+                lectureDates.forEach((dateStr, index) => { 
+                    const [m, d] = dateStr.split('/'); 
+                    const lectureMonth = parseInt(m, 10);
+                    if (lectureMonth === targetMonth) { 
+                        monthlyIndices.push(index); 
+                    } 
+                }); 
+
+                if (monthlyIndices.length === 0) { alert(`No lectures found for month ${targetMonth}.`); return; } 
+
+                const { tableHeaders, tableData } = processExportData(students, lectureDates, monthlyIndices); 
+                const now = new Date().toLocaleString(); 
+                doc.text(`${courseName} (${courseCode}) Monthly Report - ${targetMonth}/${targetYearStr}`, 14, 15); 
+                doc.setFontSize(10); doc.text(`Generated on: ${now}`, 14, 22); 
+                
+                doc.autoTable({ 
+                    startY: 25, head: [tableHeaders], body: tableData, 
+                    styles: { fontSize: 8, cellPadding: 1, overflow: 'linebreak' }, 
+                    headStyles: { fillColor: [255, 193, 7], textColor: [0, 0, 0] } 
+                }); 
+                doc.save(`${courseCode}_Monthly_${targetMonth}_${targetYearStr}.pdf`);
+
+            } catch (error) {
+                console.error("Export PDF Error:", error);
+                alert(`Failed to export PDF: ${error.message}`);
+            }
+        }
+
+        function exportAllPdf() { 
+            const { jsPDF } = window.jspdf;
+            const indices = lectureDates.map((_, i) => i); 
+            const { tableHeaders, tableData } = processExportData(students, lectureDates, indices); 
+            const doc = new jsPDF('l'); 
+            const now = new Date().toLocaleString(); 
+            doc.text(`${courseName} (${courseCode}) Full Report`, 14, 15); 
+            doc.setFontSize(10); doc.text(`Generated on: ${now}`, 14, 22); 
+            doc.autoTable({ startY: 25, head: [tableHeaders], body: tableData, styles: { fontSize: 8, cellPadding: 1, overflow: 'linebreak' }, headStyles: { fillColor: [0, 123, 255] } }); 
+            doc.save(`${courseCode}_Full_Report.pdf`); 
+        }
+
+        function attachDeleteListeners() { 
+             document.querySelectorAll('.delete-student-btn').forEach(btn => {
+                 btn.addEventListener('click', async function() {
+                     if (confirm('Delete this student?')) {
+                         students = students.filter(s => s.id !== this.dataset.studentId);
+                         if (await saveAttendanceData()) renderTable();
+                     }
+                 });
+             });
+        }
+
+        async function init() {
+            document.getElementById('logoutLink').addEventListener('click', handleLogout);
+            if (!courseCode) return;
+            document.getElementById('course-name-display').textContent = `Attendance: ${courseName}`;
+            document.getElementById('course-code-display').textContent = `Course Code: ${courseCode}`;
+
+            if (currentUserRole === 'student') {
+                currentStudentRoll = await getStudentRollNumber(currentStudentUsername);
+            }
+
+            // --- MODIFIED: Initialize Date Input to Today and Lock It ---
+            if (currentUserRole !== 'student') {
+                const today = new Date().toISOString().split('T')[0];
+                const dateInput = document.getElementById('newLectureDateInput');
+                if (dateInput) {
+                    dateInput.value = today;
+                    // It is already readonly in HTML, but we ensure strictness here if needed
+                }
+            }
+            // --- END MODIFIED ---
+
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/api/attendance/${courseCode}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    students = data.students || [];
+                    lectureDates = data.lectureDates || [];
+                }
+            } catch (e) { console.error(e); }
+
+            renderTable();
+
+            if (currentUserRole !== 'student') {
+                 document.getElementById('addStudentBtn').addEventListener('click', async () => {
+                     const name = document.getElementById('newStudentName').value;
+                     const roll = document.getElementById('newStudentRollNo').value;
+                     if(name && roll) {
+                         students.push({ id: generateUniqueId(), name, rollNumber: roll, attendance: Array(lectureDates.length).fill(0) });
+                         if(await saveAttendanceData()) { renderTable(); document.getElementById('newStudentName').value=''; document.getElementById('newStudentRollNo').value='';}
+                     }
+                 });
+                 
+                 document.getElementById('addLectureBtn').addEventListener('click', async () => {
+                      // --- MODIFIED: Strictly use today's date ---
+                      const dateInput = document.getElementById('newLectureDateInput');
+                      const dateVal = dateInput.value; // This is already locked to today
+                      
+                      // Double check against actual system date to prevent tampering
+                      const systemToday = new Date().toISOString().split('T')[0];
+                      if (dateVal !== systemToday) {
+                          alert("Error: Attendance can only be taken for the current date.");
+                          return;
+                      }
+                      
+                      const parts = dateVal.split('-');
+                      const dateStr = `${parts[1].replace(/^0+/, '')}/${parts[2].replace(/^0+/, '')}`;
+                      
+                      if (lectureDates.includes(dateStr)) { alert(`Date ${dateStr} already exists.`); return; }
+
+                      lectureDates.unshift(dateStr);
+                      students.forEach(s => s.attendance ? s.attendance.unshift(0) : s.attendance = [0]);
+                      if(await saveAttendanceData()) { renderTable(); alert('Date added.'); }
+                 });
+
+                 document.getElementById('markAttendanceBtn').addEventListener('click', openAttendanceModal);
+                 document.getElementById('closeModalBtn').addEventListener('click', () => document.getElementById('attendanceModal').style.display = 'none');
+                 document.getElementById('saveAttendanceModalBtn').addEventListener('click', saveModalAttendance);
+                 document.getElementById('exportPdfBtn').addEventListener('click', exportAllPdf);
+                 document.getElementById('exportMonthlyPdfBtn').addEventListener('click', exportMonthlyPdf); 
+            }
+        }
+        init();
+    </script>
+</body>
+</html>

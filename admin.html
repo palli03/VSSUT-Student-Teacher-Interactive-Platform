@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Admin-specific styles */
+        .admin-header {
+            background-color: #343a40; /* Dark theme for admin */
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .admin-container {
+            padding: 30px;
+        }
+        .section-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .section-title {
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            color: #343a40;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+        th {
+            background-color: #e9ecef;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-approve {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .search-bar, .input-field {
+            margin-bottom: 15px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .input-group {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+            margin-bottom: 10px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body>
+    <header class="admin-header">
+        <div class="logo">Admin Panel - VSSUT Platform</div>
+        <a href="#" id="logoutLink" style="color: white; text-decoration: none;">Logout</a>
+    </header>
+
+    <div class="admin-container">
+        
+        <div class="section-card">
+            <h2 class="section-title">Add New User</h2>
+            <div class="input-group">
+                <div class="form-group">
+                    <label for="newUsername">Username</label>
+                    <input type="text" id="newUsername" class="input-field" placeholder="Enter username" style="width: 200px; margin-bottom: 0;">
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">Password</label>
+                    <input type="password" id="newPassword" class="input-field" placeholder="Enter password" style="width: 200px; margin-bottom: 0;">
+                </div>
+                <div class="form-group">
+                    <label for="newUserRole">Role</label>
+                    <select id="newUserRole" class="input-field" style="width: 150px; margin-bottom: 0; height: 35px;">
+                        <option value="student">Student</option>
+                        <option value="teacher">Teacher</option>
+                    </select>
+                </div>
+                <button onclick="addUser()" class="btn-primary" style="height: 35px;">+ Add User</button>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <h2 class="section-title">Manage Users</h2>
+            <input type="text" id="userSearch" class="search-bar" placeholder="Search by username..." style="width: 300px;">
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    </tbody>
+            </table>
+        </div>
+
+        <div class="section-card">
+            <h2 class="section-title">System Data Overview</h2>
+            <div style="display: flex; gap: 20px;">
+                <div style="flex: 1; background: #f8f9fa; padding: 15px; border-radius: 6px;">
+                    <h4>Total Students</h4>
+                    <p id="countStudents" style="font-size: 2rem; font-weight: bold;">0</p>
+                </div>
+                <div style="flex: 1; background: #f8f9fa; padding: 15px; border-radius: 6px;">
+                    <h4>Total Teachers</h4>
+                    <p id="countTeachers" style="font-size: 2rem; font-weight: bold;">0</p>
+                </div>
+                <div style="flex: 1; background: #f8f9fa; padding: 15px; border-radius: 6px;">
+                    <h4>Active Courses</h4>
+                    <p id="countCourses" style="font-size: 2rem; font-weight: bold;">0</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Note: No slash at the very end
+        const API_URL = 'https://VSSUT-api.onrender.com';
+
+        // --- Auth Guard ---
+        (function() {
+            const user = localStorage.getItem('currentUsername');
+            const role = localStorage.getItem('currentUserRole');
+            
+            if (!user || role !== 'admin') {
+                alert('Unauthorized access.');
+                try {
+                    window.location.href = 'index.html';
+                } catch (e) {
+                    console.error("Redirection failed:", e);
+                }
+            }
+        })();
+
+        // --- Logout ---
+        document.getElementById('logoutLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            localStorage.clear();
+            window.location.href = 'index.html';
+        });
+
+        // --- Add User Function ---
+        async function addUser() {
+            const username = document.getElementById('newUsername').value;
+            const password = document.getElementById('newPassword').value;
+            const role = document.getElementById('newUserRole').value;
+
+            if (!username || !password) {
+                alert("Please fill in username and password.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/admin/add_user`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, userType: role })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert("User added successfully!");
+                    document.getElementById('newUsername').value = '';
+                    document.getElementById('newPassword').value = '';
+                    loadUsers(); // Refresh table
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                console.error("Error adding user:", error);
+                alert("Failed to add user. Ensure backend is running.");
+            }
+        }
+
+        // --- Fetch & Render Users ---
+        async function loadUsers() {
+            try {
+                const response = await fetch(`${API_URL}/api/admin/users`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const users = await response.json();
+                const tbody = document.getElementById('usersTableBody');
+                tbody.innerHTML = '';
+
+                // Search Filter Logic
+                const searchTerm = document.getElementById('userSearch').value.toLowerCase();
+                const filteredUsers = users.filter(user => user.username.toLowerCase().includes(searchTerm));
+
+                filteredUsers.forEach(user => {
+                    const row = document.createElement('tr');
+                    
+                    const status = user.approved ? '<span style="color:green; font-weight:bold;">Active</span>' : '<span style="color:orange; font-weight:bold;">Pending</span>';
+                    
+                    let actionButtons = `<button class="btn-danger" onclick="deleteUser('${user._id}')">Delete</button>`;
+                    
+                    if (!user.approved) {
+                        actionButtons = `<button class="btn-approve" onclick="approveUser('${user._id}')">Approve</button>` + actionButtons;
+                    }
+
+                    row.innerHTML = `
+                        <td>${user.username}</td>
+                        <td>${user.userType}</td>
+                        <td>${status}</td>
+                        <td>${actionButtons}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                // Update User Counts
+                document.getElementById('countStudents').textContent = users.filter(u => u.userType === 'student').length;
+                document.getElementById('countTeachers').textContent = users.filter(u => u.userType === 'teacher').length;
+
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
+        // --- NEW: Fetch Course Count ---
+        async function loadCourseCount() {
+            try {
+                const response = await fetch(`${API_URL}/api/courses`);
+                if (!response.ok) throw new Error("Failed to fetch courses");
+                
+                const courses = await response.json();
+                // Update the HTML element with id="countCourses"
+                document.getElementById('countCourses').textContent = courses.length;
+                
+            } catch (error) {
+                console.error('Error loading course count:', error);
+                document.getElementById('countCourses').textContent = "Err";
+            }
+        }
+
+        // --- Search Listener ---
+        document.getElementById('userSearch').addEventListener('keyup', loadUsers);
+
+        // --- Actions ---
+        window.deleteUser = async function(userId) {
+            if(confirm('Are you sure you want to permanently delete this user?')) {
+                await fetch(`${API_URL}/api/admin/users/${userId}`, { method: 'DELETE' });
+                loadUsers(); // Refresh list
+            }
+        }
+
+        window.approveUser = async function(userId) {
+            await fetch(`${API_URL}/api/admin/users/${userId}/approve`, { method: 'POST' });
+            loadUsers(); // Refresh list
+        }
+
+        // --- Init ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUsers();
+            loadCourseCount(); // <--- Calling the new function here
+        });
+    </script>
+</body>
+</html>

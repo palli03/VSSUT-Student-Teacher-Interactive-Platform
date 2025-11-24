@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exams & Tests</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .exam-container { padding: 20px; }
+        .exam-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0; top: 0; width: 100%; height: 100%; 
+            background-color: rgba(0,0,0,0.5); 
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 700px;
+            border-radius: 8px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .question-block {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+        /* Secure Exam Mode Styles */
+        #examInterface {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: white;
+            z-index: 2000;
+            padding: 40px;
+            overflow-y: auto;
+        }
+        .warning-banner {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ffeeba;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .status-completed { background: #d4edda; color: #155724; }
+        .status-locked { background: #f8d7da; color: #721c24; }
+        .status-new { background: #cce5ff; color: #004085; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">VSSUT Interactive Platform</div>
+        <nav class="top-nav">
+            <a href="dash.html">Home</a>
+            <a href="#" id="logoutLink">Logout</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <aside class="sidebar">
+            <nav class="side-nav">
+                <a href="dash.html" class="nav-item">Dashboard</a>
+                <a href="newindex.html" class="nav-item">Edit Profile</a> 
+                <a href="classes.html" class="nav-item">Classes</a>
+                <a href="notification.html" class="nav-item">Notifications</a>
+                <a href="doubts.html" class="nav-item">Doubts</a>
+                <a href="exam.html" class="nav-item active">Exams</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h2 class="page-title">Exams & Assessments</h2>
+                <button id="createExamBtn" class="btn primary" style="display:none;">+ Create New Exam</button>
+            </div>
+            
+            <div id="examList" class="exam-container">
+                <!-- Exam Cards Load Here -->
+                <p>Loading exams...</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Exam Modal (Teacher Only) -->
+    <div id="createExamModal" class="modal">
+        <div class="modal-content">
+            <h3>Create New Exam</h3>
+            <div class="form-group">
+                <label>Course Code</label>
+                <input type="text" id="examCourseCode" placeholder="e.g., CS101">
+            </div>
+            <div class="form-group">
+                <label>Exam Title</label>
+                <input type="text" id="examTitle" placeholder="e.g., Mid-Sem Quiz 1">
+            </div>
+            
+            <div id="questionsContainer">
+                <!-- Dynamic Questions Go Here -->
+            </div>
+            
+            <button class="btn" onclick="addQuestionField()">+ Add Question</button>
+            
+            <div style="margin-top:20px; text-align:right;">
+                <button class="btn" onclick="closeModal()">Cancel</button>
+                <button class="btn primary" onclick="submitNewExam()">Publish Exam</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Exam Interface (Student Only) -->
+    <div id="examInterface">
+        <div class="warning-banner">
+            ⚠️ WARNING: Do not switch tabs or minimize this window. Doing so will immediately LOCK your exam and you will fail.
+        </div>
+        <h2 id="activeExamTitle">Exam Title</h2>
+        <div id="activeQuestionsArea"></div>
+        <button class="btn primary" onclick="submitAnswers()" style="margin-top:20px; width: 100%;">Submit Exam</button>
+    </div>
+
+    <!-- Results Modal (Teacher Only) -->
+    <div id="resultsModal" class="modal">
+        <div class="modal-content">
+            <h3>Exam Results <span id="resClose" style="float:right; cursor:pointer;" onclick="closeResultsModal()">×</span></h3>
+            <div id="resultsContent"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:5000';
+        const currentUser = localStorage.getItem('currentUsername');
+        const currentRole = localStorage.getItem('currentUserRole');
+        
+        // --- State Variables ---
+        let questionsList = []; // For creation
+        let activeExamId = null;
+        let activeExamQuestions = []; // For taking exam
+
+        // --- Init ---
+        (function() {
+            if (!currentUser) window.location.href = 'index.html';
+            document.getElementById('logoutLink').addEventListener('click', () => {
+                localStorage.clear(); window.location.href = 'index.html';
+            });
+            
+            if (currentRole === 'teacher') {
+                document.getElementById('createExamBtn').style.display = 'block';
+            }
+            
+            loadExams();
+        })();
+
+        // --- 1. Load Exams List ---
+        async function loadExams() {
+            try {
+                const res = await fetch(`${API_URL}/api/exams?role=${currentRole}&username=${currentUser}`);
+                const exams = await res.json();
+                
+                const container = document.getElementById('examList');
+                container.innerHTML = '';
+                
+                if (exams.length === 0) {
+                    container.innerHTML = '<p>No exams available.</p>';
+                    return;
+                }
+
+                for (const exam of exams) {
+                    const div = document.createElement('div');
+                    div.className = 'exam-card';
+                    
+                    let actionBtn = '';
+                    if (currentRole === 'teacher') {
+                        actionBtn = `<button class="btn" onclick="viewResults('${exam._id}')">View Results</button>`;
+                    } else {
+                        // Check status for student
+                        const statusRes = await fetch(`${API_URL}/api/exams/status`, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ examId: exam._id, username: currentUser })
+                        });
+                        const statusData = await statusRes.json();
+                        
+                        if (statusData.status === 'completed') {
+                            actionBtn = `<span class="status-badge status-completed">Score: ${statusData.score}</span>`;
+                        } else if (statusData.status === 'locked') {
+                            actionBtn = `<span class="status-badge status-locked">Locked (Cheating Detected)</span>`;
+                        } else {
+                            actionBtn = `<button class="btn primary" onclick="startExam('${exam._id}')">Start Exam</button>`;
+                        }
+                    }
+
+                    div.innerHTML = `
+                        <div>
+                            <h3>${exam.title}</h3>
+                            <small>${exam.courseCode} | Created by ${exam.creator}</small>
+                        </div>
+                        <div>${actionBtn}</div>
+                    `;
+                    container.appendChild(div);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // --- 2. Create Exam Logic (Teacher) ---
+        document.getElementById('createExamBtn').onclick = () => {
+            document.getElementById('createExamModal').style.display = 'block';
+            questionsList = [];
+            document.getElementById('questionsContainer').innerHTML = '';
+            addQuestionField(); // Add first question
+        };
+
+        function closeModal() { document.getElementById('createExamModal').style.display = 'none'; }
+        
+        function addQuestionField() {
+            const index = questionsList.length;
+            questionsList.push({}); // Placeholder
+            
+            const div = document.createElement('div');
+            div.className = 'question-block';
+            div.innerHTML = `
+                <h4>Question ${index + 1}</h4>
+                <input type="text" class="q-text" placeholder="Question Text" style="width:100%; margin-bottom:5px;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+                    <input type="text" class="opt-0" placeholder="Option A">
+                    <input type="text" class="opt-1" placeholder="Option B">
+                    <input type="text" class="opt-2" placeholder="Option C">
+                    <input type="text" class="opt-3" placeholder="Option D">
+                </div>
+                <label style="margin-top:5px; display:block;">Correct Option:</label>
+                <select class="correct-opt">
+                    <option value="0">Option A</option>
+                    <option value="1">Option B</option>
+                    <option value="2">Option C</option>
+                    <option value="3">Option D</option>
+                </select>
+            `;
+            document.getElementById('questionsContainer').appendChild(div);
+        }
+
+        async function submitNewExam() {
+            const courseCode = document.getElementById('examCourseCode').value;
+            const title = document.getElementById('examTitle').value;
+            
+            // Gather questions
+            const blocks = document.querySelectorAll('.question-block');
+            const questions = [];
+            
+            blocks.forEach(block => {
+                questions.push({
+                    text: block.querySelector('.q-text').value,
+                    options: [
+                        block.querySelector('.opt-0').value,
+                        block.querySelector('.opt-1').value,
+                        block.querySelector('.opt-2').value,
+                        block.querySelector('.opt-3').value
+                    ],
+                    correctOption: parseInt(block.querySelector('.correct-opt').value)
+                });
+            });
+
+            const res = await fetch(`${API_URL}/api/exams`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ courseCode, title, creator: currentUser, questions })
+            });
+
+            if (res.ok) {
+                closeModal();
+                loadExams();
+                alert("Exam Created!");
+            } else {
+                alert("Error creating exam.");
+            }
+        }
+
+        // --- 3. View Results & Reset (Teacher) ---
+        async function viewResults(examId) {
+            document.getElementById('resultsModal').style.display = 'block';
+            const res = await fetch(`${API_URL}/api/exams/results/${examId}`);
+            const results = await res.json();
+            
+            let html = '<table style="width:100%; border-collapse:collapse;"><tr><th>Student</th><th>Status</th><th>Score</th><th>Action</th></tr>';
+            results.forEach(r => {
+                html += `<tr>
+                    <td style="padding:8px; border-bottom:1px solid #ddd;">${r.studentUsername}</td>
+                    <td style="padding:8px; border-bottom:1px solid #ddd;">${r.status}</td>
+                    <td style="padding:8px; border-bottom:1px solid #ddd;">${r.score}/${r.total || '?'}</td>
+                    <td style="padding:8px; border-bottom:1px solid #ddd;">
+                        ${r.status === 'locked' ? `<button class="btn" style="background:#ffc107; padding:2px 8px; font-size:0.8rem;" onclick="resetStudentExam('${examId}', '${r.studentUsername}')">Reset</button>` : ''}
+                    </td>
+                </tr>`;
+            });
+            html += '</table>';
+            document.getElementById('resultsContent').innerHTML = html;
+        }
+
+        function closeResultsModal() { document.getElementById('resultsModal').style.display = 'none'; }
+
+        async function resetStudentExam(examId, studentUsername) {
+            if(!confirm("Allow this student to retake the exam?")) return;
+            await fetch(`${API_URL}/api/exams/reset`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ examId, studentUsername })
+            });
+            viewResults(examId); // Refresh
+        }
+
+        // --- 4. Take Exam Logic (Student - SECURE MODE) ---
+        async function startExam(examId) {
+            if(!confirm("Starting this exam will enter Fullscreen mode. If you switch tabs or exit fullscreen, the exam will be LOCKED.")) return;
+            
+            // Mark start in backend
+            const startRes = await fetch(`${API_URL}/api/exams/start`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ examId, username: currentUser })
+            });
+            
+            if (!startRes.ok) {
+                alert("Could not start exam. It might be locked.");
+                return;
+            }
+
+            // Get Exam Data (Reuse get list logic or fetch specific - simplified here by fetching specific logic if needed, but we have list loaded. Let's fetch clean list to get questions).
+            // NOTE: In a real app, you'd have a specific GET /api/exam/:id endpoint to hide answers. 
+            // For this snippet, we assume the list loaded previously contains data. Ideally, secure backend shouldn't send answers to student.
+            // Simplified: Fetch all details again.
+            const allExamsRes = await fetch(`${API_URL}/api/exams?role=${currentRole}&username=${currentUser}`);
+            const allExams = await allExamsRes.json();
+            const exam = allExams.find(e => e._id === examId);
+
+            activeExamId = examId;
+            activeExamQuestions = exam.questions;
+
+            // Render Questions
+            let html = '';
+            exam.questions.forEach((q, idx) => {
+                html += `<div class="question-block">
+                    <p><strong>Q${idx+1}:</strong> ${q.text}</p>
+                    ${q.options.map((opt, oIdx) => `
+                        <label style="display:block; margin:5px 0;">
+                            <input type="radio" name="q_${idx}" value="${oIdx}"> ${opt}
+                        </label>
+                    `).join('')}
+                </div>`;
+            });
+            document.getElementById('activeQuestionsArea').innerHTML = html;
+            
+            // Show Interface & Enter Fullscreen
+            const elem = document.getElementById('examInterface');
+            elem.style.display = 'block';
+            if (elem.requestFullscreen) elem.requestFullscreen();
+            
+            // --- SECURITY MONITORS ---
+            document.addEventListener("visibilitychange", handleVisibilityChange);
+            window.addEventListener("blur", handleBlur);
+        }
+
+        function handleVisibilityChange() {
+            if (document.hidden) triggerLock();
+        }
+        
+        function handleBlur() {
+            // Optional: Blur is very sensitive (clicking url bar triggers it). 
+            // Visibility change is safer for "tab switching".
+            // Uncomment next line for stricter mode
+            // triggerLock(); 
+        }
+
+        async function triggerLock() {
+            // Remove listeners so it doesn't fire repeatedly
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+            window.removeEventListener("blur", handleBlur);
+            
+            // Call Backend Lock
+            await fetch(`${API_URL}/api/exams/lock`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ examId: activeExamId, username: currentUser })
+            });
+            
+            alert("VIOLATION DETECTED: You switched tabs/windows. The exam is now LOCKED.");
+            window.location.reload();
+        }
+
+        async function submitAnswers() {
+            const answers = [];
+            for (let i = 0; i < activeExamQuestions.length; i++) {
+                const selected = document.querySelector(`input[name="q_${i}"]:checked`);
+                answers.push(selected ? parseInt(selected.value) : -1);
+            }
+
+            // Remove security listeners before submitting
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+
+            const res = await fetch(`${API_URL}/api/exams/submit`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ examId: activeExamId, username: currentUser, answers })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                alert(`Exam Submitted! You scored ${data.score}/${data.total}`);
+                window.location.reload();
+            }
+        }
+    </script>
+</body>
+</html>

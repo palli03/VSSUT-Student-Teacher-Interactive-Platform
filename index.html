@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VSSUT Interactive Platform</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the background gradient.
+        Adjusted to include a purple/pink hue in the gradient to match the border in the new image. 
+        */
+        .gradient-background {
+            background: linear-gradient(135deg, #1e3a8a, #4c1d95, #0c4a6e); /* Dark blue -> Deep Purple -> Dark Teal */
+        }
+        /* Custom font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Ensure the body takes up the full viewport height */
+            min-height: 100vh; 
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="gradient-background text-white antialiased">
+
+    <div class="container mx-auto px-6 py-4 min-h-screen flex flex-col">
+
+        <!-- Header / Navigation Bar -->
+        <header class="flex justify-between items-center mb-12 py-4">
+            <!-- Logo Area Updated -->
+            <div class="flex items-center space-x-4">
+                <!-- Image Logo Placeholder: You can replace the 'src' with your actual logo URL -->
+                <div class="w-20 h-20 rounded-xl flex items-center justify-center overflow-hidden">
+                    <img 
+                        src="logo.png" 
+                        alt="VSSUT University Logo/Crest" 
+                        class="w-full h-full object-contain"
+                    >
+                </div>
+                <!-- University Name Text -->
+                <div class="hidden sm:block">
+                    <p class="text-sm font-semibold tracking-wider uppercase">Veer Surendra Sai University</p>
+                    <p class="text-sm font-semibold tracking-wider uppercase">Of Technology</p>
+                    <p class="text-xs text-gray-300">Odisha, Burla</p>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <nav class="flex space-x-4">
+                <a href="login.html" class="px-5 py-2.5 rounded-full bg-green-500 hover:bg-green-600 transition-colors font-medium shadow-xl">
+                    Login
+                </a>
+                <a href="signup.html" class="px-5 py-2.5 rounded-full bg-green-500 hover:bg-green-600 transition-colors font-medium shadow-xl">
+                    Sign Up
+                </a>
+            </nav>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-grow grid md:grid-cols-2 items-center pb-30 gap-10">
+
+            <!-- Left Content: Text and Welcome Button -->
+            <div class="space-y-6 text-center md:text-center">
+                <h1 class="text-7xl font-extrabold tracking-tight">VSSUT</h1>
+                <h2 class="text-3xl sm:text-4xl font-light text-gray-200 max-auto">
+                    Student-Teacher Interactive Platform
+                </h2>
+                
+                <!-- Welcome Button (REQUIRED LINK) -->
+                <a 
+                    href="https://www.vssut.ac.in/" 
+                    target="_blank" 
+                    class="inline-block px-8 py-4 mt-6 rounded-full bg-teal-500 text-lg font-semibold text-white shadow-2xl hover:bg-teal-600 transition-transform duration-300 transform hover:scale-105"
+                >
+                    Welcome to the Team
+                </a>
+            </div>
+
+            <!-- Right Content: Illustration Image -->
+            <div class="flex justify-center items-center h-full p-8">
+                <!-- 
+                    Placeholder image is used to represent the uploaded image. 
+                    I've chosen dimensions (600x400) and a color scheme (green/blue) that aligns with the design.
+                -->
+                <img 
+                    src="pic1.png" 
+                    alt="Abstract illustration of students and data interfaces" 
+                    class="w-full max-w-md h-auto rounded-xl shadow-2xl"
+                />
+            </div>
+            
+        </main>
+    </div>
+</body>
+</html>

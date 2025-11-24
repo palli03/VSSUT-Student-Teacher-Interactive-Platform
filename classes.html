@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classes | Dashboard</title>
+    <link rel="stylesheet" href="styles.css"> 
+    <style>
+        /* (Keep your existing styles) */
+        /* Add specific styles for buttons */
+        .subject-button {
+            display: block;
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            text-align: left;
+            border: 1px solid #007bff;
+            border-radius: 6px;
+            background-color: #f0f8ff; /* Light blue background */
+            color: #007bff;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .subject-button:hover {
+            background-color: #007bff;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0, 123, 255, 0.2);
+        }
+        .class-roster-btn {
+             padding: 5px 10px !important; 
+             margin-left: 10px;
+        }
+        .profile-card h3 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        .data-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px dotted #e0e0e0;
+        }
+        .teacher-subject-btn {
+            background-color: transparent !important;
+            border: none !important;
+            color: var(--text-dark) !important;
+            text-align: left;
+            padding: 0;
+            margin: 0;
+            cursor: pointer;
+            transition: color 0.2s;
+            flex-grow: 1; /* Allows button to take available space */
+        }
+        .teacher-subject-btn:hover {
+            color: var(--primary-color) !important;
+            background-color: transparent !important;
+            transform: none;
+            box-shadow: none;
+            text-decoration: underline;
+        }
+        /* New styles for class management */
+        .class-management-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            align-items: center;
+        }
+        .class-management-group input {
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .class-management-group #newCourseName {
+            flex-basis: 40%;
+        }
+        .class-management-group #newCourseCode {
+            flex-basis: 20%;
+        }
+        .teacher-actions {
+            display: flex;
+            gap: 5px;
+            margin-left: auto;
+        }
+        .delete-class-btn {
+            background-color: #dc3545;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            margin-left: 10px;
+        }
+        .error-box {
+            color: #721c24; 
+            background-color: #f8d7da; 
+            border: 1px solid #f5c6cb; 
+            padding: 15px; 
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">VSSUT Student-Teacher Interactive Platform</div>
+        <nav class="top-nav">
+            <a href="dash.html">Home</a>
+            <a href="#" id="logoutLink">Logout</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <aside class="sidebar">
+            <nav class="side-nav">
+                <a href="dash.html" class="nav-item">Dashboard</a>
+                <a href="newindex.html" class="nav-item">Edit Profile</a> 
+                <a href="classes.html" class="nav-item active">Classes</a>
+                <a href="notification.html" class="nav-item">Notifications</a>
+                <a href="doubts.html" class="nav-item">Doubts</a>
+                <a href="exam.html" class="nav-item">Exams</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <h2 class="page-title" id="classes-title">Loading Classes...</h2>
+            <p class="subtitle" id="classes-subtitle"></p>
+
+            <div class="classes-content" id="classes-role-specific-content">
+                <div class="profile-card">
+                    <p>Fetching class data...</p>
+                </div>
+            </div>
+            
+        </main>
+    </div>
+
+    <script>
+        // --- 1. Route Guard ---
+        (function() {
+            const loggedInUser = localStorage.getItem('currentUsername');
+            if (!loggedInUser) {
+                alert('You are not logged in. Redirecting...');
+                window.location.href = 'index.html';
+                throw new Error("User not logged in."); 
+            }
+        })();
+        // --- End Route Guard ---
+
+        const API_URL = 'https://VSSUT-api.onrender.com';
+        let allCourses = []; 
+
+        // --- Utility Functions ---
+        function handleLogout(event) {
+            event.preventDefault();
+            localStorage.removeItem('currentUserRole');
+            localStorage.removeItem('currentUsername');
+            window.location.href = 'index.html'; 
+        }
+
+        // --- Persistence Functions ---
+        async function loadCourses() {
+            try {
+                const userRole = localStorage.getItem('currentUserRole');
+                const currentUsername = localStorage.getItem('currentUsername');
+                
+                let fetchUrl = `${API_URL}/api/courses`;
+
+                // --- MODIFIED: Filter fetch for teachers ---
+                if (userRole === 'teacher') {
+                    fetchUrl = `${API_URL}/api/courses?teacher=${currentUsername}`;
+                }
+                // -------------------------------------------
+
+                const response = await fetch(fetchUrl);
+                if (!response.ok) throw new Error(`Failed to fetch courses (Status: ${response.status})`);
+                allCourses = await response.json();
+                
+                if (userRole === 'teacher') {
+                    renderTeacherView(allCourses);
+                } else if (userRole === 'admin') {
+                    // Admin sees all (default fetchUrl gets all if no query param)
+                    renderTeacherView(allCourses); 
+                } else if (userRole === 'student') {
+                    const profileResponse = await fetch(`${API_URL}/api/profile/${currentUsername}`);
+                    
+                    if (!profileResponse.ok) {
+                        throw new Error("Could not fetch student profile to verify enrollment.");
+                    }
+                    
+                    const profile = await profileResponse.json();
+                    const myRollNumber = profile.rollNumber;
+
+                    if (!myRollNumber) {
+                        throw new Error("Your profile does not have a Roll Number. Please update your profile.");
+                    }
+
+                    const myEnrolledCourses = allCourses.filter(course => {
+                        if (course.students && Array.isArray(course.students)) {
+                            return course.students.some(s => s.rollNumber === myRollNumber);
+                        }
+                        return false;
+                    });
+
+                    renderStudentView(myEnrolledCourses);
+
+                } else {
+                    document.getElementById('classes-title').textContent = "Unauthorized Access";
+                    document.getElementById('classes-role-specific-content').innerHTML = '<div class="profile-card"><p>You must be logged in as a teacher or student.</p></div>';
+                }
+            } catch (error) {
+                console.error('Error loading classes:', error);
+                let errorMessage = `<p>Error: ${error.message}.</p>`;
+                if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+                    errorMessage += '<p style="margin-top: 10px;"><strong>Debug Tip:</strong> This usually means your backend server (app.py) is not running.</p>';
+                }
+                document.getElementById('classes-role-specific-content').innerHTML = `<div class="profile-card error-box">${errorMessage}</div>`;
+            }
+        }
+        
+        // --- Course Management (Teacher Only) ---
+        function addCourse() {
+            const nameInput = document.getElementById('newCourseName');
+            const codeInput = document.getElementById('newCourseCode');
+            const errorDiv = document.getElementById('class-error');
+            
+            const name = nameInput.value.trim();
+            const code = codeInput.value.trim().toUpperCase();
+            const creator = localStorage.getItem('currentUsername'); // Get creator
+
+            errorDiv.textContent = '';
+            if (!name || !code) {
+                errorDiv.textContent = 'Please enter both course name and code.';
+                return;
+            }
+            
+            // --- MODIFIED: Send creator in body ---
+            fetch(`${API_URL}/api/courses`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    name: name, 
+                    courseCode: code,
+                    creator: creator 
+                })
+            })
+            // --------------------------------------
+            .then(response => {
+                if (response.status === 409) return response.json().then(err => { throw new Error(err.message); });
+                if (!response.ok) throw new Error(`Failed to add course (Status: ${response.status})`);
+                return response.json();
+            })
+            .then(() => {
+                loadCourses(); 
+                nameInput.value = '';
+                codeInput.value = '';
+            })
+            .catch(error => {
+                errorDiv.textContent = error.message;
+            });
+        }
+
+        function deleteCourse(courseCodeToDelete) {
+            if (confirm(`Are you sure you want to delete the course ${courseCodeToDelete}?`)) {
+                fetch(`${API_URL}/api/courses/${courseCodeToDelete}`, { method: 'DELETE' })
+                .then(response => {
+                    if (!response.ok && response.status !== 404) return response.json().then(err => { throw new Error(err.message); });
+                    loadCourses(); 
+                })
+                .catch(error => {
+                    console.error('Delete course error:', error);
+                    alert('Error deleting course: ' + error.message);
+                });
+            }
+        }
+
+        // --- Rendering ---
+        async function renderTeacherView(coursesToRender) {
+            const contentDiv = document.getElementById('classes-role-specific-content');
+            document.getElementById('classes-title').textContent = "My Class List";
+            document.getElementById('classes-subtitle').textContent = "Add, delete, and manage classes assigned to you.";
+            
+            let html = `
+                <div class="profile-card">
+                    <h3>Add New Course</h3>
+                    <div class="class-management-group">
+                        <input type="text" id="newCourseName" placeholder="Course Name (e.g., Data Structures)">
+                        <input type="text" id="newCourseCode" placeholder="Code (e.g., CS401)">
+                        <button type="button" class="btn primary" id="addCourseBtn">Add Class</button>
+                    </div>
+                    <div id="class-error" class="text-red-500 text-sm mt-2"></div>
+                </div>
+                <div class="profile-card">
+                    <h3>Current Courses</h3>`;
+            
+            if (coursesToRender.length === 0) {
+                html += '<p>No courses currently added.</p>';
+            } else {
+                for (const cls of coursesToRender) {
+                    html += `
+                        <div class="data-item" data-code="${cls.courseCode}">
+                            <button type="button" class="teacher-subject-btn" data-code="${cls.courseCode}">
+                                <strong>${cls.name}</strong> (${cls.courseCode})
+                            </button>
+                            <span class="data-value teacher-actions">
+                                <button type="button" class="btn primary class-roster-btn" data-code="${cls.courseCode}">View Roster</button>
+                                <button type="button" class="delete-class-btn" data-code="${cls.courseCode}">Delete</button>
+                            </span>
+                        </div>`;
+                }
+            }
+            html += '</div>';
+            contentDiv.innerHTML = html;
+            document.getElementById('addCourseBtn').addEventListener('click', addCourse);
+            attachTeacherClassListeners();
+        }
+
+        async function renderStudentView(enrolledCourses) {
+            const contentDiv = document.getElementById('classes-role-specific-content');
+            document.getElementById('classes-title').textContent = "My Enrolled Subjects";
+            document.getElementById('classes-subtitle').textContent = "These are the courses where your Roll Number is registered.";
+            
+            let html = '<div class="profile-card"><h3>Subjects</h3>';
+            
+            if (enrolledCourses.length === 0) {
+                 html += '<p style="color: #6c757d;">You are not enrolled in any courses yet. Please ask your teacher to add your Roll Number to their class list.</p>';
+            }
+
+            for (const subject of enrolledCourses) {
+                html += `<button type="button" class="subject-button" data-code="${subject.courseCode}">
+                            <strong>${subject.name}</strong> (${subject.courseCode})
+                        </button>`;
+            }
+            html += '</div>';
+            contentDiv.innerHTML = html;
+            
+            document.querySelectorAll('.subject-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const classCode = this.getAttribute('data-code');
+                    window.location.href = `attend_teach.html?course=${classCode}`; 
+                });
+            });
+        }
+
+        function attachTeacherClassListeners() {
+            document.querySelectorAll('.delete-class-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    deleteCourse(this.getAttribute('data-code'));
+                });
+            });
+            document.querySelectorAll('.teacher-subject-btn, .class-roster-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    window.location.href = `attend_teach.html?course=${this.getAttribute('data-code')}`; 
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('logoutLink').addEventListener('click', handleLogout);
+            loadCourses();
+        });
+
+        async function loadCourses() {
+            try {
+                const userRole = localStorage.getItem('currentUserRole');
+                const currentUsername = localStorage.getItem('currentUsername');
+                
+                // Default fetch URL
+                let fetchUrl = `${API_URL}/api/courses`;
+
+                const response = await fetch(fetchUrl);
+                if (!response.ok) throw new Error(`Failed to fetch courses (Status: ${response.status})`);
+                allCourses = await response.json();
+                
+                if (userRole === 'teacher') {
+                    // FILTER: Only show courses created by this specific teacher
+                    const myCourses = allCourses.filter(course => course.creator === currentUsername);
+                    renderTeacherView(myCourses);
+                } else if (userRole === 'admin') {
+                    // Admin sees all courses
+                    renderTeacherView(allCourses); 
+                } else if (userRole === 'student') {
+                    const profileResponse = await fetch(`${API_URL}/api/profile/${currentUsername}`);
+                    
+                    if (!profileResponse.ok) {
+                        throw new Error("Could not fetch student profile to verify enrollment.");
+                    }
+                    
+                    const profile = await profileResponse.json();
+                    const myRollNumber = profile.rollNumber;
+
+                    if (!myRollNumber) {
+                        throw new Error("Your profile does not have a Roll Number. Please update your profile.");
+                    }
+
+                    const myEnrolledCourses = allCourses.filter(course => {
+                        if (course.students && Array.isArray(course.students)) {
+                            return course.students.some(s => s.rollNumber === myRollNumber);
+                        }
+                        return false;
+                    });
+
+                    renderStudentView(myEnrolledCourses);
+
+                } else {
+                    document.getElementById('classes-title').textContent = "Unauthorized Access";
+                    document.getElementById('classes-role-specific-content').innerHTML = '<div class="profile-card"><p>You must be logged in as a teacher or student.</p></div>';
+                }
+            } catch (error) {
+                console.error('Error loading classes:', error);
+                let errorMessage = `<p>Error: ${error.message}.</p>`;
+                if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+                    errorMessage += '<p style="margin-top: 10px;"><strong>Debug Tip:</strong> This usually means your backend server (app.py) is not running.</p>';
+                }
+                document.getElementById('classes-role-specific-content').innerHTML = `<div class="profile-card error-box">${errorMessage}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

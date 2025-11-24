@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doubts | Chatroom</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* --- Layout Styles --- */
+        body, html {
+            height: 100%;
+            margin: 0;
+            overflow: hidden; /* Prevent full page scroll */
+        }
+        .container {
+            height: calc(100vh - 70px); /* Adjust based on header height */
+            display: flex;
+        }
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            box-sizing: border-box;
+        }
+        .page-title {
+            margin-bottom: 15px;
+        }
+        .chat-container {
+            display: flex;
+            flex: 1; /* Take remaining height */
+            gap: 20px;
+            min-height: 0; /* Important for nested flex scroll */
+        }
+        
+        /* --- Sidebar Styles --- */
+        .course-list {
+            flex: 0 0 250px;
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+        }
+        .course-item {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 4px;
+        }
+        .course-item:hover { background-color: #f8f9fa; }
+        .course-item.active {
+            background-color: #e7f1ff;
+            color: #007bff;
+            border-left: 4px solid #007bff;
+        }
+
+        /* --- Chat Area Styles --- */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border: 1px solid #dee2e6;
+            overflow: hidden; /* Contains the scrollbar inside */
+        }
+        .chat-header {
+            padding: 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            font-weight: bold;
+            color: #343a40;
+        }
+        .messages-box {
+            flex: 1; /* Grows to fill space */
+            padding: 20px;
+            overflow-y: auto; /* Scrollable area */
+            background-color: #f5f7fb;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .message-input-area {
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #dee2e6;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        #msgInput {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ced4da;
+            border-radius: 20px;
+            outline: none;
+        }
+        #msgInput:focus { border-color: #80bdff; }
+
+        /* --- Bubble Styles --- */
+        .message-bubble {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            font-size: 0.95rem;
+            position: relative;
+            word-wrap: break-word;
+        }
+        .msg-left {
+            align-self: flex-start;
+            background-color: white;
+            border: 1px solid #e9ecef;
+            border-bottom-left-radius: 2px;
+        }
+        .msg-right {
+            align-self: flex-end;
+            background-color: #007bff;
+            color: white;
+            border-bottom-right-radius: 2px;
+        }
+        .msg-meta {
+            font-size: 0.75rem;
+            margin-bottom: 4px;
+            display: block;
+            opacity: 0.8;
+            font-weight: bold;
+        }
+        .role-tag {
+            font-size: 0.65rem;
+            padding: 1px 5px;
+            border-radius: 4px;
+            margin-left: 5px;
+            background: rgba(0,0,0,0.1);
+            text-transform: uppercase;
+        }
+        
+        /* Delete Button */
+        .delete-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 12px;
+            line-height: 18px;
+            text-align: center;
+            cursor: pointer;
+            display: none; /* Hidden by default */
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .message-bubble:hover .delete-btn {
+            display: block; /* Show on hover */
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">VSSUT Interactive Platform</div>
+        <nav class="top-nav">
+            <a href="dash.html">Home</a>
+            <a href="#" id="logoutLink">Logout</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <aside class="sidebar">
+            <nav class="side-nav">
+                <a href="dash.html" class="nav-item">Dashboard</a>
+                <a href="newindex.html" class="nav-item">Edit Profile</a> 
+                <a href="classes.html" class="nav-item">Classes</a>
+                <a href="notification.html" class="nav-item">Notifications</a>
+                <a href="doubts.html" class="nav-item active">Doubts</a>
+                <a href="exam.html" class="nav-item">Exams</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <h2 class="page-title">Doubts & Discussion</h2>
+            
+            <div class="chat-container">
+                <div class="course-list">
+                    <h3 style="margin-top:0; padding-bottom:10px; border-bottom:1px solid #eee;">Select Subject</h3>
+                    <div id="courseListContainer">Loading subjects...</div>
+                </div>
+
+                <div class="chat-area">
+                    <div class="chat-header" id="chatHeader">Select a subject to start chatting</div>
+                    
+                    <div class="messages-box" id="messagesBox">
+                        <div style="text-align:center; color:#888; margin-top:20px;">
+                            Please select a subject from the left list.
+                        </div>
+                    </div>
+
+                    <div class="message-input-area">
+                        <input type="text" id="msgInput" placeholder="Type your doubt here..." disabled>
+                        <button class="btn primary" id="sendBtn" disabled style="padding: 10px 25px; border-radius: 20px;">Send</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:5000';
+        const currentUser = localStorage.getItem('currentUsername');
+        const currentRole = localStorage.getItem('currentUserRole');
+        let activeCourseCode = null;
+
+        // Auth Guard
+        if (!currentUser) window.location.href = 'index.html';
+
+        document.getElementById('logoutLink').addEventListener('click', () => {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        });
+
+        // 1. Fetch Courses
+        // 1. Fetch Courses (Updated for Strict Server-Side Filtering)
+        async function loadSideCourses() {
+            try {
+                const container = document.getElementById('courseListContainer');
+                container.innerHTML = 'Loading subjects...';
+
+                let fetchUrl = `${API_URL}/api/courses`;
+
+                if (currentRole === 'teacher') {
+                    // Teacher: Ask backend for courses created by me
+                    fetchUrl = `${API_URL}/api/courses?teacher=${currentUser}`;
+                    const res = await fetch(fetchUrl);
+                    const courses = await res.json();
+                    renderCourseList(courses);
+
+                } else if (currentRole === 'student') {
+                    // Student: First get my profile to know my Roll Number
+                    const profileRes = await fetch(`${API_URL}/api/profile/${currentUser}`);
+                    if (!profileRes.ok) throw new Error("Could not fetch profile");
+                    
+                    const profile = await profileRes.json();
+                    const myRoll = profile.rollNumber;
+
+                    if (!myRoll) {
+                        container.innerHTML = '<p style="padding:10px; color:red;">Update your profile with a Roll Number to see classes.</p>';
+                        return;
+                    }
+
+                    // Student: Ask backend for courses where my Roll Number is enrolled
+                    fetchUrl = `${API_URL}/api/courses?student_roll=${myRoll}`;
+                    const res = await fetch(fetchUrl);
+                    const courses = await res.json();
+                    renderCourseList(courses);
+
+                } else {
+                    // Admin or others (fallback)
+                    const res = await fetch(fetchUrl);
+                    const courses = await res.json();
+                    renderCourseList(courses);
+                }
+            } catch (e) {
+                console.error(e);
+                document.getElementById('courseListContainer').innerHTML = '<p style="color:red">Error loading subjects.</p>';
+            }
+        }
+
+        function renderCourseList(courses) {
+            const container = document.getElementById('courseListContainer');
+            container.innerHTML = '';
+            
+            if (courses.length === 0) {
+                container.innerHTML = '<p style="color:#666; font-size:0.9rem;">No subjects found.</p>';
+                return;
+            }
+
+            courses.forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'course-item';
+                div.innerHTML = `<strong>${c.name}</strong> <div style="font-size:0.8rem; color:#666;">${c.courseCode}</div>`;
+                div.onclick = () => loadChat(c.courseCode, c.name, div);
+                container.appendChild(div);
+            });
+        }
+
+        // 2. Load Chat Logic
+        async function loadChat(code, name, element) {
+            activeCourseCode = code;
+            
+            // UI Updates
+            document.querySelectorAll('.course-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            document.getElementById('chatHeader').textContent = `${name} (${code}) - Chatroom`;
+            
+            // Enable Input
+            document.getElementById('msgInput').disabled = false;
+            document.getElementById('sendBtn').disabled = false;
+            document.getElementById('msgInput').focus();
+
+            fetchMessages();
+        }
+
+        async function fetchMessages() {
+            if (!activeCourseCode) return;
+            try {
+                const res = await fetch(`${API_URL}/api/doubts/${activeCourseCode}`);
+                const msgs = await res.json();
+                renderMessages(msgs);
+            } catch (e) { console.error(e); }
+        }
+
+        function renderMessages(msgs) {
+            const box = document.getElementById('messagesBox');
+            box.innerHTML = '';
+            
+            if(msgs.length === 0) {
+                box.innerHTML = '<div style="text-align:center; color:#aaa; margin-top:20px;">No doubts asked yet. Be the first!</div>';
+                return;
+            }
+
+            msgs.forEach(msg => {
+                const isMe = msg.username === currentUser;
+                const div = document.createElement('div');
+                div.className = `message-bubble ${isMe ? 'msg-right' : 'msg-left'}`;
+                
+                // Delete button logic: Show if I sent it OR if I am a teacher
+                let deleteHtml = '';
+                if (isMe || currentRole === 'teacher') {
+                    deleteHtml = `<span class="delete-btn" onclick="deleteMessage('${msg._id}')">×</span>`;
+                }
+
+                div.innerHTML = `
+                    ${deleteHtml}
+                    <span class="msg-meta">
+                        ${isMe ? 'You' : msg.username} 
+                        <span class="role-tag">${msg.role}</span>
+                    </span>
+                    ${msg.message}
+                    <div style="font-size:0.65rem; text-align:right; margin-top:5px; opacity:0.7">${msg.timestamp}</div>
+                `;
+                box.appendChild(div);
+            });
+            box.scrollTop = box.scrollHeight; // Auto scroll to bottom
+        }
+
+        // 3. Send Logic
+        async function sendMessage() {
+            const txt = document.getElementById('msgInput').value.trim();
+            if (!txt || !activeCourseCode) return;
+
+            // Weekend Check for Students
+            if (currentRole === 'student') {
+                const day = new Date().getDay(); // 0=Sun, 6=Sat
+                if (day !== 0 && day !== 6) {
+                    alert("Students can only post doubts on Saturday and Sunday.");
+                    return;
+                }
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/api/doubts`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        courseCode: activeCourseCode,
+                        username: currentUser,
+                        role: currentRole,
+                        message: txt
+                    })
+                });
+
+                if (res.ok) {
+                    document.getElementById('msgInput').value = '';
+                    fetchMessages();
+                } else {
+                    const err = await res.json();
+                    alert(err.message);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // 4. Delete Logic
+        window.deleteMessage = async function(msgId) {
+            if(confirm("Delete this message?")) {
+                try {
+                    const res = await fetch(`${API_URL}/api/doubts/${msgId}`, { method: 'DELETE' });
+                    if(res.ok) {
+                        fetchMessages();
+                    } else {
+                        alert("Failed to delete message");
+                    }
+                } catch(e) { console.error(e); }
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('sendBtn').addEventListener('click', sendMessage);
+        document.getElementById('msgInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+        
+        // Polling
+        setInterval(fetchMessages, 3000);
+        document.addEventListener('DOMContentLoaded', loadSideCourses);
+    </script>
+</body>
+</html>

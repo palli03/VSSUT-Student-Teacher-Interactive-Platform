@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Profile Summary</title>
+    <link rel="stylesheet" href="styles.css"> 
+    <style>
+        /* Specific styles for the Dashboard page */
+        .profile-card {
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 25px;
+        }
+        .profile-card h3 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        .data-item {
+            display: flex;
+            margin-bottom: 10px;
+            padding: 5px 0;
+            border-bottom: 1px dotted #e0e0e0;
+        }
+        .data-item:last-child {
+            border-bottom: none;
+        }
+        .data-label {
+            font-weight: bold;
+            color: var(--text-dark);
+            width: 220px; 
+            flex-shrink: 0;
+        }
+        .data-value {
+            color: var(--secondary-color);
+            flex-grow: 1;
+        }
+        /* Style for lists like skills, internships, etc. */
+        .list-display {
+            padding-left: 20px;
+            margin: 5px 0;
+            list-style: disc;
+        }
+        .list-display li {
+            margin-bottom: 3px;
+            color: var(--text-dark);
+        }
+        .edit-btn-container {
+            text-align: right;
+            margin-top: 20px;
+        }
+        .alert-box {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">VSSUT Student-Teacher Interactive Platform</div>
+        <nav class="top-nav">
+            <a href="dash.html">Home</a>
+            <a href="#" id="logoutLink">Logout</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <aside class="sidebar">
+            <nav class="side-nav">
+                <a href="dash.html" class="nav-item active">Dashboard</a>
+                <a href="newindex.html" class="nav-item">Edit Profile</a>
+                <a href="classes.html" class="nav-item">Classes</a>
+                <a href="notification.html" class="nav-item">Notifications</a>
+                <a href="doubts.html" class="nav-item">Doubts</a>
+                <a href="exam.html" class="nav-item">Exams</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <h2 class="page-title" id="dashboardTitle">Student Dashboard</h2>
+            <p class="subtitle" id="dashboardSubtitle">A quick summary of your registered profile details.</p>
+
+            <div class="alert-box"></div>
+
+            <div class="profile-card">
+                <h3>Personal Information</h3>
+                <div class="data-item">
+                    <span class="data-label">Full Name:</span>
+                    <span class="data-value" id="summaryFullName"></span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Email Address:</span>
+                    <span class="data-value" id="summaryEmail"></span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Date of Birth:</span>
+                    <span class="data-value" id="summaryDOB"></span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Mobile Number:</span>
+                    <span class="data-value" id="summaryPhone"></span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Address:</span>
+                    <span class="data-value" id="summaryAddress"></span>
+                </div>
+            </div>
+
+            <div class="profile-card">
+                <h3>Educational Details</h3>
+                <div class="data-item">
+                    <span class="data-label">Institution Name:</span>
+                    <span class="data-value" id="summaryInstitution"></span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">University Roll Number:</span>
+                    <span class="data-value" id="summaryRollNumber"></span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Degree/Program:</span>
+                    <span class="data-value" id="summaryDegree"></span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Branch/Specialization:</span>
+                    <span class="data-value" id="summaryBranch"></span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Current Academic Year:</span>
+                    <span class="data-value" id="summaryYear"></span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Current Semester:</span>
+                    <span class="data-value" id="summarySemester"></span>
+                </div>
+            </div>
+            
+            <div class="profile-card">
+                <h3>Experience and Skills</h3>
+                
+                <div class="data-item">
+                    <span class="data-label">Placement Status:</span>
+                    <span class="data-value" id="summaryPlacementStatus"></span>
+                </div>
+
+                <div class="data-item">
+                    <span class="data-label">Skills:</span>
+                    <span class="data-value" id="summarySkills"></span>
+                </div>
+                
+                <div class="data-item">
+                    <span class="data-label">Technical Languages:</span>
+                    <span class="data-value" id="summaryTechLanguages"></span>
+                </div>
+
+                <div class="data-item" style="align-items: flex-start;">
+                    <span class="data-label">Internships Done:</span>
+                    <ul class="list-display" id="summaryInternships"></ul>
+                </div>
+
+                <div class="data-item" style="align-items: flex-start;">
+                    <span class="data-label">Projects Completed:</span>
+                    <ul class="list-display" id="summaryProjects"></ul>
+                </div>
+                
+                <div class="data-item" style="align-items: flex-start;">
+                    <span class="data-label">Hackathons Participated:</span>
+                    <ul class="list-display" id="summaryHackathons"></ul>
+                </div>
+                
+                <div class="data-item" style="align-items: flex-start; border-bottom: none;">
+                    <span class="data-label">Webinars/Courses:</span>
+                    <ul class="list-display" id="summaryWebinars"></ul>
+                </div>
+            </div>
+            
+            <div class="edit-btn-container">
+                <a href="newindex.html" class="btn primary">Go to Edit Profile</a>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        (function() {
+            function checkLogin() {
+                const user = localStorage.getItem('currentUsername');
+                if (!user) {
+                    // window.location.replace() removes the current page from history
+                    // so the user cannot click "Back" to return to it.
+                    window.location.replace('index.html');
+                }
+            }
+
+            // 1. Check immediately when the script runs
+            checkLogin();
+
+            // 2. Check again if the page is loaded from the browser's "Back" cache
+            window.addEventListener('pageshow', function(event) {
+                checkLogin();
+            });
+        })();
+        
+        // --- Utility: Logout ---
+        document.getElementById('logoutLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            localStorage.removeItem('currentUserRole');
+            localStorage.removeItem('currentUsername');
+            window.location.href = 'index.html';
+        });
+
+        // --- Utility: Populate Lists ---
+        function populateList(listId, items) {
+            const ul = document.getElementById(listId);
+            ul.innerHTML = ''; 
+            if (items && items.length > 0) {
+                items.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = item;
+                    ul.appendChild(li);
+                });
+            } else {
+                const li = document.createElement('li');
+                li.textContent = 'None recorded';
+                ul.appendChild(li);
+            }
+        }
+
+        // --- Function: Fill page with data ---
+        function displayProfile(profileData, isViewingOther) {
+            const defaultData = {
+                fullName: "N/A", email: "N/A", phone: "N/A", address: "N/A", dob: "N/A", 
+                institution: "N/A", rollNumber: "N/A", degree: "N/A", branch: "N/A", 
+                year: "N/A", semester: "N/A", 
+                skills: "N/A", techLanguages: "N/A", placementStatus: "N/A", 
+                webinars: [], internships: [], projects: [], hackathons: [] 
+            };
+
+            const data = { ...defaultData, ...profileData };
+
+            // Populate Fields
+            document.getElementById('summaryFullName').textContent = data.fullName;
+            document.getElementById('summaryEmail').textContent = data.email;
+            document.getElementById('summaryDOB').textContent = data.dob;
+            document.getElementById('summaryPhone').textContent = data.phone;
+            document.getElementById('summaryAddress').textContent = data.address;
+            document.getElementById('summaryInstitution').textContent = data.institution;
+            document.getElementById('summaryRollNumber').textContent = data.rollNumber;
+            document.getElementById('summaryDegree').textContent = data.degree;
+            document.getElementById('summaryBranch').textContent = data.branch;
+            document.getElementById('summaryYear').textContent = data.year;
+            document.getElementById('summarySemester').textContent = data.semester;
+            document.getElementById('summarySkills').textContent = data.skills;
+            document.getElementById('summaryTechLanguages').textContent = data.techLanguages;
+            
+            let placementText = (data.placementStatus || 'N/A').replace(/_/g, ' ');
+            document.getElementById('summaryPlacementStatus').textContent = placementText;
+
+            populateList('summaryInternships', data.internships);
+            populateList('summaryProjects', data.projects);
+            populateList('summaryHackathons', data.hackathons);
+            populateList('summaryWebinars', data.webinars);
+
+            // Handle View Mode UI
+            const alertBox = document.querySelector('.alert-box');
+            const pageTitle = document.getElementById('dashboardTitle');
+            const subtitle = document.getElementById('dashboardSubtitle');
+            const editBtnContainer = document.querySelector('.edit-btn-container');
+
+            if (isViewingOther) {
+                // Teacher viewing student
+                if (pageTitle) pageTitle.textContent = `Viewing Dashboard for ${data.fullName}`;
+                if (subtitle) subtitle.textContent = `Roll Number: ${data.rollNumber}`;
+                if (alertBox) {
+                    alertBox.innerHTML = `ℹ️ You are viewing the profile for ${data.fullName}.`;
+                    alertBox.style.backgroundColor = '#d1ecf1';
+                    alertBox.style.color = '#0c5460';
+                }
+                if (editBtnContainer) editBtnContainer.style.display = 'none';
+            } else {
+                // Viewing own profile
+                if (alertBox) {
+                    if (data.fullName !== "N/A") {
+                        alertBox.innerHTML = '✅ Your profile is loaded from the database.';
+                        alertBox.style.backgroundColor = '#d4edda'; 
+                        alertBox.style.color = '#155724';
+                    } else if (data.message === "Profile not found") {
+                        alertBox.innerHTML = '⚠️ Your profile is empty. Please visit **Edit Profile** to fill in your details.';
+                    }
+                }
+            }
+        }
+
+        // --- Main Logic ---
+        document.addEventListener('DOMContentLoaded', async function() {
+            const alertBox = document.querySelector('.alert-box');
+            
+            // Check for "Teacher viewing Student" mode via URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const rollNumberFromUrl = urlParams.get('roll');
+
+            let profileApiUrl = '';
+            let isViewingOther = false; 
+
+            const userRole = localStorage.getItem('currentUserRole');
+
+            if (rollNumberFromUrl) {
+                // Mode: Teacher viewing Student
+                profileApiUrl = `http://127.0.0.1:5000/api/profile/by-roll/${rollNumberFromUrl}`;
+                isViewingOther = true;
+            } else {
+                // Mode: Viewing own profile
+                const username = localStorage.getItem('currentUsername');
+                if (!username) {
+                    if (alertBox) {
+                        alertBox.innerHTML = '⚠️ You are not logged in. <a href="index.html" class="font-bold">Please login</a>.';
+                        alertBox.style.backgroundColor = '#f8d7da'; 
+                        alertBox.style.color = '#721c24';
+                    }
+                    return;
+                }
+                profileApiUrl = `http://127.0.0.1:5000/api/profile/${username}`;
+                isViewingOther = false;
+
+                // --- CRITICAL UPDATE: Change Title based on User Type ---
+                if (userRole === 'teacher') {
+                    document.getElementById('dashboardTitle').textContent = "Teacher's Dashboard";
+                    document.getElementById('dashboardSubtitle').textContent = "Manage your professional profile and settings.";
+                } else {
+                    document.getElementById('dashboardTitle').textContent = "Student Dashboard";
+                }
+                // -------------------------------------------------------
+            }
+
+            try {
+                const response = await fetch(profileApiUrl);
+                if (response.status === 404) {
+                    const errorData = await response.json();
+                    if (alertBox) alertBox.innerHTML = `❌ ${errorData.message || 'Profile not found.'}`;
+                    return;
+                }
+                if (!response.ok) {
+                    throw new Error('Failed to load profile.');
+                }
+                const profileData = await response.json();
+                displayProfile(profileData, isViewingOther);
+
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                if (alertBox) alertBox.innerHTML = '❌ Error connecting to the server.';
+            }
+        });
+    </script>
+</body>
+</html>
